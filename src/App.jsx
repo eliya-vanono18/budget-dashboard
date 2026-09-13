@@ -5,6 +5,7 @@ import {
   Settings,
   Plus,
   X,
+  Menu,
   TrendingUp,
   TrendingDown,
   Wallet,
@@ -456,6 +457,7 @@ export default function BudgetDashboard() {
   const [transactions, setTransactions] = useState(INITIAL_TRANSACTIONS);
   const [budgetLimits, setBudgetLimits] = useState(BUDGET_LIMITS);
   const [modalOpen, setModalOpen] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   const totals = useMemo(() => {
     const income = transactions.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0);
@@ -478,50 +480,99 @@ export default function BudgetDashboard() {
   const handleAddTransaction = (tx) => setTransactions((prev) => [tx, ...prev]);
   const handleBudgetChange = (cat, val) => setBudgetLimits((prev) => ({ ...prev, [cat]: val }));
 
+  const NavContent = () => (
+    <>
+      <div className="flex items-center gap-2 px-1">
+        <div className="w-9 h-9 rounded-xl bg-violet-600 flex items-center justify-center text-white font-bold">
+          ₪
+        </div>
+        <div>
+          <div className="font-semibold text-gray-800 text-sm">תקציב חכם</div>
+          <div className="text-xs text-gray-400">ניהול פיננסי אישי</div>
+        </div>
+      </div>
+
+      <nav className="flex flex-col gap-1">
+        {NAV_ITEMS.map((item) => {
+          const Icon = item.icon;
+          const isActive = activeTab === item.id;
+          return (
+            <button
+              key={item.id}
+              onClick={() => {
+                setActiveTab(item.id);
+                setMobileNavOpen(false);
+              }}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors ${
+                isActive ? "bg-violet-600 text-white shadow-sm" : "text-gray-500 hover:bg-violet-50 hover:text-violet-600"
+              }`}
+            >
+              <Icon size={18} />
+              {item.label}
+            </button>
+          );
+        })}
+      </nav>
+
+      <button
+        onClick={() => {
+          setModalOpen(true);
+          setMobileNavOpen(false);
+        }}
+        className="mt-auto flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-700 transition-colors text-white rounded-xl py-2.5 text-sm font-medium"
+      >
+        <Plus size={16} />
+        הוסף תנועה
+      </button>
+    </>
+  );
+
   return (
     <div dir="rtl" className="min-h-screen bg-[#F7F6FB] flex font-sans" style={{ fontFamily: "'Segoe UI', Arial, sans-serif" }}>
-      {/* Sidebar */}
-      <aside className="w-64 bg-white border-l border-gray-100 flex flex-col p-5 gap-8 shrink-0">
-        <div className="flex items-center gap-2 px-1">
-          <div className="w-9 h-9 rounded-xl bg-violet-600 flex items-center justify-center text-white font-bold">
-            ₪
-          </div>
-          <div>
-            <div className="font-semibold text-gray-800 text-sm">תקציב חכם</div>
-            <div className="text-xs text-gray-400">ניהול פיננסי אישי</div>
-          </div>
-        </div>
-
-        <nav className="flex flex-col gap-1">
-          {NAV_ITEMS.map((item) => {
-            const Icon = item.icon;
-            const isActive = activeTab === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => setActiveTab(item.id)}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors ${
-                  isActive ? "bg-violet-600 text-white shadow-sm" : "text-gray-500 hover:bg-violet-50 hover:text-violet-600"
-                }`}
-              >
-                <Icon size={18} />
-                {item.label}
-              </button>
-            );
-          })}
-        </nav>
-
-        <button
-          onClick={() => setModalOpen(true)}
-          className="mt-auto flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-700 transition-colors text-white rounded-xl py-2.5 text-sm font-medium"
-        >
-          <Plus size={16} />
-          הוסף תנועה
-        </button>
+      {/* Sidebar - desktop only */}
+      <aside className="hidden md:flex w-64 bg-white border-l border-gray-100 flex-col p-5 gap-8 shrink-0">
+        <NavContent />
       </aside>
 
+      {/* Mobile top bar */}
+      <div className="md:hidden fixed top-0 inset-x-0 h-14 bg-white border-b border-gray-100 flex items-center justify-between px-4 z-30">
+        <button
+          onClick={() => setMobileNavOpen(true)}
+          className="w-9 h-9 rounded-xl flex items-center justify-center text-gray-600 hover:bg-violet-50 hover:text-violet-600 transition-colors"
+          aria-label="פתח תפריט"
+        >
+          <Menu size={20} />
+        </button>
+        <div className="flex items-center gap-2">
+          <span className="font-semibold text-gray-800 text-sm">תקציב חכם</span>
+          <div className="w-7 h-7 rounded-lg bg-violet-600 flex items-center justify-center text-white text-xs font-bold">
+            ₪
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile nav drawer */}
+      {mobileNavOpen && (
+        <div className="md:hidden fixed inset-0 z-40 flex">
+          <div
+            className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm"
+            onClick={() => setMobileNavOpen(false)}
+          />
+          <aside className="relative w-64 bg-white h-full flex flex-col p-5 gap-8 shadow-2xl mr-0">
+            <button
+              onClick={() => setMobileNavOpen(false)}
+              className="absolute left-4 top-4 text-gray-400 hover:text-gray-600 transition-colors"
+              aria-label="סגור תפריט"
+            >
+              <X size={20} />
+            </button>
+            <NavContent />
+          </aside>
+        </div>
+      )}
+
       {/* Main content */}
-      <main className="flex-1 p-6 overflow-y-auto">
+      <main className="flex-1 p-4 md:p-6 pt-20 md:pt-6 overflow-y-auto overflow-x-hidden">
         <header className="mb-6">
           <h1 className="text-xl font-semibold text-gray-800">
             {NAV_ITEMS.find((n) => n.id === activeTab)?.label}
